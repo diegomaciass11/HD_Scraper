@@ -17,7 +17,7 @@ def get_driver():
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
-        options.binary_location = "/usr/bin/chromium"  # For Streamlit Cloud
+        options.binary_location = "/usr/bin/chromium"  # Streamlit Cloud
 
         service = Service(ChromeDriverManager(driver_version="120.0.6099.224").install())
         _driver = webdriver.Chrome(service=service, options=options)
@@ -59,7 +59,7 @@ def scrape_product_info(sku):
         for (var i = 0; i < element.childNodes.length; i++) {
             var node = element.childNodes[i];
             if (node.nodeType === Node.TEXT_NODE) {
-                mainText += node.textContent.trim();                
+                mainText += node.textContent.trim();
             } else if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'SUP') {
                 supCount++;
                 if (supCount === 2) {
@@ -91,8 +91,3 @@ def scrape_product_info(sku):
         "Stock Available": stock,
         "URL": url
     }
-
-        "Price": price,
-        "Stock Available": stock,
-        "URL": url
-    }])

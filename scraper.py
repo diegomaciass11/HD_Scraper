@@ -17,48 +17,32 @@ def get_driver():
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
-        options.binary_location = "/usr/bin/chromium"  # Streamlit Cloud
+        options.binary_location = "/usr/bin/chromium"  # For Streamlit Cloud
 
         service = Service(ChromeDriverManager(driver_version="120.0.6099.224").install())
         _driver = webdriver.Chrome(service=service, options=options)
-        _driver.implicitly_wait(0)  # Disable implicit waits for performance
     return _driver
 
-def scrape_product_info(sku: str):
-    url = f"https://www.homedepot.com.mx/s/{sku}"
+def scrape_product_info(sku):
     driver = get_driver()
+    url = f"https://www.homedepot.com.mx/comprar/es/catalog/search/{sku}"
     driver.get(url)
-    print(f"[INFO] Visiting {url}")
 
-    # Wait for product name (main indicator page is ready)
+    # Product name
     try:
-        name = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "h1.product-name"))
-        ).text
-    except TimeoutException:
-        return pd.DataFrame([{
-            "SKU": sku,
-            "Name": "Error",
-            "Description": "Page did not load in time",
-            "Price": "",
-            "Stock Available": "",
-            "URL": url
-        }])
-
-    # Close popup if it appears
-    try:
-        close_icon = WebDriverWait(driver, 3).until(
-            EC.element_to_be_clickable((By.CLASS_NAME, "dialogStore--icon--highlightOff"))
+        name_elem = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "h1.product-title"))
         )
-        close_icon.click()
+        name = name_elem.text
     except TimeoutException:
-        pass
+        name = "Not found"
 
     # Description
     try:
-        description = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "p.MuiTypography-root.sc-hsWlPz.juosUc.sc-hrDvXV.iuUlyx.MuiTypography-body1"))
-        ).text
+        description_elem = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div#product-detail-tabs section"))
+        )
+        description = description_elem.text
     except TimeoutException:
         description = "Not found"
 
@@ -99,10 +83,15 @@ def scrape_product_info(sku: str):
     except TimeoutException:
         stock = "Not found"
 
-    return pd.DataFrame([{
+    return {
         "SKU": sku,
         "Name": name,
         "Description": description,
+        "Price": price,
+        "Stock Available": stock,
+        "URL": url
+    }
+
         "Price": price,
         "Stock Available": stock,
         "URL": url

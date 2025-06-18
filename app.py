@@ -63,10 +63,21 @@ if st.button("Get Info for All SKUs"):
             with st.spinner(f"Scraping SKU {i}/{len(sku_list)}: {sku}"):
                 try:
                     product_info = scrape_product_info(sku)
-                    all_new_data.append(product_info)
+                    if isinstance(product_info, dict):
+                        all_new_data.append(product_info)
+                    else:
+                        st.warning(f"⚠️ SKU {sku} returned invalid data.")
                 except Exception as e:
-                    st.error(f"Error scraping {sku}: {e}")
+                    st.error(f"❌ Error scraping {sku}: {e}")
 
-        if all_new_data:
-            new_df = pd.DataFrame(all_new_data)
-            st.session_state.products_df = pd.concat([st.session_state.products_df, new_df], ignore_index=True)
+        # Filter out invalid or empty results
+        valid_data = [row for row in all_new_data if isinstance(row, dict) and row]
+
+        if valid_data:
+            new_df = pd.DataFrame(valid_data)
+            st.session_state.products_df = pd.concat(
+                [st.session_state.products_df, new_df], ignore_index=True
+            )
+        else:
+            st.warning("No valid data was retrieved from the provided SKUs.")
+
